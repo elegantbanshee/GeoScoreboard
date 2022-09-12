@@ -1,0 +1,20 @@
+<html>
+    <head>
+        <title>GeoScoreboard</title>
+        <link rel="stylesheet" href="/css/style.css" />
+    </head>
+    <body>
+        {{#if email}}
+            <div id="email-div">{{email}}</div>
+            <div id="api_key">{{api_key}}</div>
+            <form id="reset-form" method="post" action="/reset_api_key">
+                <input type="submit" id="new_api_button" value="Regenerate API Key">
+            </form>
+        {{else}}
+            <a id="signup-link" href="/signup">Sign Up</a>
+            <a id="login-link" href="/login">Login</a>
+        {{/if}}
+
+        <script src="/js/index.js"></script>
+    </body>
+</html>

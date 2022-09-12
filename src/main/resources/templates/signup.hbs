@@ -1,0 +1,24 @@
+<html>
+    <head>
+        <title>GeoScoreboard</title>
+        <link rel="stylesheet" href="/css/style.css" />
+    </head>
+    <body>
+        <div id="signup-message"></div>
+
+        <form id="signup-form" action="/signup" method="post">
+            <label for="email-signup">Email:&nbsp;</label>
+            <input type="email" id="email-signup" name="email" required="true">
+            <br>
+            <label for="password-signup">Password:&nbsp;</label>
+            <input type="password" id="password-signup" name="password" required="true">
+            <br>
+            <input type="submit" id="submit-signup">
+        </form>
+
+        <script>
+            var geoScoreboardStatus = "{{status}}";
+        </script>
+        <script src="/js/signup.js"></script>
+    </body>
+</html>

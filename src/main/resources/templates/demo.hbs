@@ -1,0 +1,26 @@
+<html>
+<head>
+    <title>GeoScoreboard</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<form>
+    <label for="demo-text">Insert a score:&nbsp;</label>
+    <input type="number" id="demo-text">
+    <input type="button" value="Submit" id="demo-submit">
+</form>
+
+<!-- Begin GEO SCOREBOARD -->
+<script src="/geoscoreboard/geoscoreboard.js"></script>
+<script>
+    // Set the name to be displayed on the top of the scoreboard div
+    GeoScoreboardOptions.title = "Demo";
+    GeoScoreboardOptions.apiKey = "demo";
+    GeoScoreboardOptions.scoreboard = "demo_scoreboard";
+</script>
+<!-- End GEO SCOREBOARD -->
+
+<script src="/js/demo.js"></script>
+</body>
+</html>
