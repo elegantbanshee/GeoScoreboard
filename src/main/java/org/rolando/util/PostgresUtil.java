@@ -285,6 +285,8 @@ public class PostgresUtil {
         List<ScoreBoard> scoreBoards = getScoreboards(apiKey, cityCountryName);
 
         boolean isGreater = false;
+        if (scoreBoards.size() == 0)
+            isGreater = true;
         for (ScoreBoard scoreBoard : scoreBoards) {
             if (scoreBoard.score <= score) {
                 isGreater = true;

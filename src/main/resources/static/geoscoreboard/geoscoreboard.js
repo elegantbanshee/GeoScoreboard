@@ -5,7 +5,9 @@ var GeoScoreboardOptions = {
 };
 
 var GeoScoreboard = class  {
-    constructor() {}
+    constructor() {
+        this.waiting = false;
+    }
 
     init() {
         this._addStyleSheet();
@@ -20,6 +22,7 @@ var GeoScoreboard = class  {
     }
 
     publish(scoreboard, score, longitude, latitude) {
+        this.waiting = true;
         if (typeof longitude !== "undefined" && typeof latitude !== "undefined") {
             this._handlePosition(scoreboard, longitude, latitude, score);
             return;
@@ -36,6 +39,12 @@ var GeoScoreboard = class  {
 
     _handlePosition(scoreboard, longitude, latitude, score) {
         var xhr = new XMLHttpRequest();
+        var that = this;
+        xhr.addEventListener("readystatechange", function () {
+            if (this.readyState === 4 && this.status === 200) {
+                that.waiting = false;
+            }
+        });
         xhr.open("POST", GeoScoreboardOptions._server + "publish");
         var apiKey = GeoScoreboardOptions.apiKey;
         xhr.send(`scoreboard=${scoreboard}&longitude=${longitude}&latitude=${latitude}` +
@@ -43,6 +52,14 @@ var GeoScoreboard = class  {
     }
 
     show(scoreboard, longitude, latitude) {
+        if (this.waiting) {
+            var that = this;
+            setTimeout(function (event) {
+                that.show(scoreboard, longitude, latitude);
+            }, 100);
+            return;
+        }
+
         if (typeof longitude !== "undefined" && typeof latitude !== "undefined") {
             this._show(scoreboard, longitude, latitude);
             return;
@@ -57,6 +74,7 @@ var GeoScoreboard = class  {
                 that._show(scoreboard, -1, -1);
             });
     }
+
     _show(scoreboardName, longitude, latitude) {
         this.hide();
 
