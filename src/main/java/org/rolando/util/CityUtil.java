@@ -56,7 +56,7 @@ public class CityUtil {
     public static String getCityCountryName(float longitude, float latitude) {
         String cityCountryName = "";
         float distance = Float.MAX_VALUE;
-        for (var index = 0; index < cities.length(); index++) {
+        for (int index = 0; index < cities.length(); index++) {
             JSONObject city = cities.getJSONObject(index);
             float newLongitude = city.getFloat("lng");
             float newLatitude = city.getFloat("lat");
@@ -68,6 +68,6 @@ public class CityUtil {
                 distance = newDistance;
             }
         }
-        return cityCountryName.toLowerCase(Locale.US).replaceAll("\s", "");
+        return cityCountryName.toLowerCase(Locale.US).replaceAll(" ", "");
     }
 }

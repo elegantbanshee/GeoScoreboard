@@ -6,10 +6,11 @@ import org.rolando.data.ScoreBoard;
 import org.rolando.data.User;
 import org.sql2o.Connection;
 import org.sql2o.Sql2o;
-import org.sql2o.Sql2oException;
 import org.sql2o.quirks.PostgresQuirks;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,6 +22,7 @@ public class PostgresUtil {
             (int) StringUtil.parseLong(System.getenv()
                     .getOrDefault("SQL_CONNECTIONS", "1"));
     private static String schema;
+    private static final ReentrantLock LOCK = new ReentrantLock();
 
     public static void init() {
         String sqlUrlEnv = System.getenv("DATABASE_URL_ENV");
@@ -69,11 +71,12 @@ public class PostgresUtil {
      * @param connection sql2o connection
      */
     private static void releaseConnection(@Nullable Connection connection) {
+        LOCK.unlock();
         if (connection != null) {
             try {
                 connection.close();
             }
-            catch (Sql2oException e) {
+            catch (Exception e) {
                 Logger.exception(e);
             }
         }
@@ -86,10 +89,14 @@ public class PostgresUtil {
      * @return sql2o connection
      */
     private static Connection getConnection() {
+        LOCK.lock();
         while (connections >= MAX_CONNECTIONS)
             try {
-                Thread.sleep(100);
-            } catch (InterruptedException ignore) {}
+                Thread.sleep(1);
+            }
+            catch (Exception e) {
+                Logger.exception(e);
+            }
         Connection connection = sql2o.open();
         connections++;
         return connection;
@@ -100,9 +107,10 @@ public class PostgresUtil {
      * @return sql2o connection
      */
     private static Connection getTransaction() {
+        LOCK.lock();
         while (connections >= MAX_CONNECTIONS)
             try {
-                Thread.sleep(100);
+                Thread.sleep(1);
             } catch (InterruptedException ignore) {}
         Connection connection = sql2o.beginTransaction();
         connections++;
@@ -134,7 +142,7 @@ public class PostgresUtil {
                 return null;
             return users.get(0);
         }
-        catch (Sql2oException e) {
+        catch (Exception e) {
             Logger.exception(e);
             releaseConnection(connection);
             return null;
@@ -162,7 +170,7 @@ public class PostgresUtil {
                 return null;
             return users.get(0);
         }
-        catch (Sql2oException e) {
+        catch (Exception e) {
             Logger.exception(e);
             releaseConnection(connection);
             return null;
@@ -186,7 +194,7 @@ public class PostgresUtil {
                     .executeUpdate();
             releaseConnection(connection);
         }
-        catch (Sql2oException e) {
+        catch (Exception e) {
             Logger.exception(e);
             releaseConnection(connection);
         }
@@ -224,7 +232,7 @@ public class PostgresUtil {
                     .executeUpdate();
             releaseConnection(connection);
         }
-        catch (Sql2oException e) {
+        catch (Exception e) {
             Logger.exception(e);
             releaseConnection(connection);
         }
@@ -246,7 +254,7 @@ public class PostgresUtil {
                     .executeUpdate();
             releaseConnection(connection);
         }
-        catch (Sql2oException e) {
+        catch (Exception e) {
             Logger.exception(e);
             releaseConnection(connection);
         }
@@ -274,7 +282,7 @@ public class PostgresUtil {
                         .executeUpdate();
                 releaseConnection(connection);
             }
-            catch (Sql2oException e) {
+            catch (Exception e) {
                 Logger.exception(e);
                 releaseConnection(connection);
             }
@@ -282,7 +290,7 @@ public class PostgresUtil {
     }
 
     private static boolean shouldPublish(String apiKey, String cityCountryName, int score) {
-        List<ScoreBoard> scoreBoards = getScoreboards(apiKey, cityCountryName);
+        List<ScoreBoard> scoreBoards = getScoreboards(apiKey, cityCountryName, 200);
 
         boolean isGreater = false;
         if (scoreBoards.size() == 0)
@@ -294,7 +302,7 @@ public class PostgresUtil {
             }
         }
 
-        for (int index = 0; index <= scoreBoards.size() - 100; index++)
+        for (int index = 0; index <= scoreBoards.size() - PostgresUtil.MAX_SCORE_BOARD_SIZE; index++)
             truncateIfNecessary(apiKey, cityCountryName);
 
         return isGreater;
@@ -304,7 +312,7 @@ public class PostgresUtil {
         if (apiKey == null)
             return;
 
-        List<ScoreBoard> scoreBoards = getScoreboards(apiKey, cityCountryName);
+        List<ScoreBoard> scoreBoards = getScoreboards(apiKey, cityCountryName, 200);
 
         if (scoreBoards == null || scoreBoards.size() < MAX_SCORE_BOARD_SIZE)
             return;
@@ -321,15 +329,15 @@ public class PostgresUtil {
                     .executeUpdate();
             releaseConnection(connection);
         }
-        catch (Sql2oException e) {
+        catch (Exception e) {
             Logger.exception(e);
             releaseConnection(connection);
         }
     }
 
-    public static List<ScoreBoard> getScoreboards(String apiKey, String cityCountryName) {
+    public static List<ScoreBoard> getScoreboards(String apiKey, String cityCountryName, int limit) {
         String sql = "select * from %s.scoreboards where api_key = :api_key and " +
-                "city_country = :city_country order by score desc limit 200;";
+                "city_country = :city_country order by score desc limit :limit;";
         sql = String.format(sql, schema);
         Connection connection = null;
         try {
@@ -337,6 +345,7 @@ public class PostgresUtil {
             List<ScoreBoard> scoreBoards = connection.createQuery(sql, false)
                     .addParameter("api_key", apiKey)
                     .addParameter("city_country", cityCountryName)
+                    .addParameter("limit", limit)
                     .addColumnMapping("api_key", "apiKey")
                     .addColumnMapping("score", "score")
                     .addColumnMapping("uid", "uid")
@@ -346,7 +355,7 @@ public class PostgresUtil {
 
             return scoreBoards;
         }
-        catch (Sql2oException e) {
+        catch (Exception e) {
             Logger.exception(e);
             releaseConnection(connection);
             return null;
@@ -357,7 +366,7 @@ public class PostgresUtil {
         if (apiKey == null)
             return Integer.MAX_VALUE;
 
-        String sql = "select count(*) from %s.scoreboards where api_key = :api_key;";
+        String sql = "select count(api_key) from %s.scoreboards where api_key = :api_key;";
         sql = String.format(sql, schema);
         Connection connection = null;
         try {
@@ -368,7 +377,7 @@ public class PostgresUtil {
             releaseConnection(connection);
             return (long) count;
         }
-        catch (Sql2oException e) {
+        catch (Exception e) {
             Logger.exception(e);
             releaseConnection(connection);
         }

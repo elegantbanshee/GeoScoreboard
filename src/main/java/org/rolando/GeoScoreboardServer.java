@@ -93,7 +93,7 @@ public class GeoScoreboardServer {
             String cityCountry = CityUtil.getCityCountryName(longitude, latitude);
             String cityCountryName = String.format("%s:%s", scoreboardName, cityCountry);
 
-            List<ScoreBoard> scoreboards = PostgresUtil.getScoreboards(apiKey, cityCountryName);
+            List<ScoreBoard> scoreboards = PostgresUtil.getScoreboards(apiKey, cityCountryName, 100);
             if (scoreboards != null) {
                 JSONArray jsonArray = new JSONArray();
                 for (ScoreBoard scoreboard : scoreboards) {
