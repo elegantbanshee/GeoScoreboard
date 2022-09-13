@@ -329,7 +329,7 @@ public class PostgresUtil {
 
     public static List<ScoreBoard> getScoreboards(String apiKey, String cityCountryName) {
         String sql = "select * from %s.scoreboards where api_key = :api_key and " +
-                "city_country = :city_country order by score desc limit 100;";
+                "city_country = :city_country order by score desc limit 200;";
         sql = String.format(sql, schema);
         Connection connection = null;
         try {
