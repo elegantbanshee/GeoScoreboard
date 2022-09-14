@@ -71,7 +71,6 @@ public class PostgresUtil {
      * @param connection sql2o connection
      */
     private static void releaseConnection(@Nullable Connection connection) {
-        LOCK.unlock();
         if (connection != null) {
             try {
                 connection.close();
@@ -80,8 +79,10 @@ public class PostgresUtil {
                 Logger.exception(e);
             }
         }
+        LOCK.lock();
         if (connections > 0)
             connections--;
+        LOCK.unlock();
     }
 
     /**
@@ -89,7 +90,6 @@ public class PostgresUtil {
      * @return sql2o connection
      */
     private static Connection getConnection() {
-        LOCK.lock();
         while (connections >= MAX_CONNECTIONS)
             try {
                 Thread.sleep(1);
@@ -98,22 +98,9 @@ public class PostgresUtil {
                 Logger.exception(e);
             }
         Connection connection = sql2o.open();
-        connections++;
-        return connection;
-    }
-
-    /**
-     * Try to fetch a transaction
-     * @return sql2o connection
-     */
-    private static Connection getTransaction() {
         LOCK.lock();
-        while (connections >= MAX_CONNECTIONS)
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException ignore) {}
-        Connection connection = sql2o.beginTransaction();
         connections++;
+        LOCK.unlock();
         return connection;
     }
 
