@@ -38,11 +38,10 @@ var GeoScoreboard = class  {
     }
 
     _handlePosition(scoreboard, longitude, latitude, score) {
-        this.waiting = false;
         var xhr = new XMLHttpRequest();
         var that = this;
         xhr.addEventListener("readystatechange", function () {
-            if (this.readyState === 4 && this.status === 200) {
+            if (this.readyState === 4) {
                 that.waiting = false;
             }
         });
