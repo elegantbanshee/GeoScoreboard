@@ -254,7 +254,8 @@ public class PostgresUtil {
 
         String cityCountryName = CityUtil.getCityCountryName(longitude, latitude);
         cityCountryName = String.format("%s:%s", scoreboard, cityCountryName);
-        if (getAmountOfRows(apiKey) < getMaxAllowedRows(apiKey) &&
+        if (isValidApiKey(apiKey) &&
+                getAmountOfRows(apiKey) < getMaxAllowedRows(apiKey) &&
                 shouldPublish(apiKey, cityCountryName, score)) {
             String sql = "insert into %s.scoreboards (api_key, score, city_country) " +
                     "values (:api_key, :score, :city_country);";
@@ -274,6 +275,15 @@ public class PostgresUtil {
                 releaseConnection(connection);
             }
         }
+    }
+
+    private static boolean isValidApiKey(String apiKey) {
+        if (apiKey.equals("demo"))
+            return true;
+        User user = getUserByApiKey(apiKey);
+        if (user == null)
+            return false;
+        return true;
     }
 
     private static boolean shouldPublish(String apiKey, String cityCountryName, int score) {
