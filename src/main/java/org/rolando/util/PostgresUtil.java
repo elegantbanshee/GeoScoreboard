@@ -254,6 +254,8 @@ public class PostgresUtil {
 
         String cityCountryName = CityUtil.getCityCountryName(longitude, latitude);
         cityCountryName = String.format("%s:%s", scoreboard, cityCountryName);
+        if (apiKey.equals("demo"))
+            cityCountryName = String.format("%s%s", "DEMO", cityCountryName);
         if (isValidApiKey(apiKey) &&
                 getAmountOfRows(apiKey) < getMaxAllowedRows(apiKey) &&
                 shouldPublish(apiKey, cityCountryName, score)) {
